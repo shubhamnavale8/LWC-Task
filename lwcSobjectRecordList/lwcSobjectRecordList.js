@@ -19,6 +19,7 @@ export default class LwcSobjectRecordList extends NavigationMixin(LightningEleme
   @api boolValChild;
   @track boolValForButton=false;
   @track countEditDelete=0;
+  @track selectedRows;
   @track actions = [
     { label: "View", name: "view" },
     { label: "Edit", name: "edit" },
@@ -165,7 +166,14 @@ export default class LwcSobjectRecordList extends NavigationMixin(LightningEleme
       this.allRecordsOfSelectedObject12 = undefined;
     }
   }
+  @track filteredInterests;
   searchRecordOnchange(event){
+    // const searchKey = event.target.value.toLowerCase();     
+    //       this.filteredInterests = this.allRecordsOfSelectedObject.filter(     
+    //         (interest) =>     
+    //           interest.Name.toLowerCase().includes(searchKey) ||    
+    //           interest.Description__c.toLowerCase().includes(searchKey)    
+    //       );
     this.searchData=event.target.value;
     this.allRecordsOfSelectedObject=this.allRecordsOfSelectedObject12;
     console.log(this.searchData)
@@ -174,4 +182,40 @@ export default class LwcSobjectRecordList extends NavigationMixin(LightningEleme
     this.searchByField = event.detail.value;  
     console.log('Select Field :'+this.searchByField)
   }
+  @track selectedRowsForDelete=[];
+  handleInterestSelect(event) {
+     this.selectedRows = event.detail.selectedRows;
+      if (this.selectedRows.length > 0) {
+        this.selectedRowsForDelete = this.selectedRows;
+        this.boolValForButton = true;
+      } else {
+        this.selectedRowsForDelete = null;
+        this.boolValForButton = false;
+      }
+     console.log('selectedRowsForDelete = '+this.selectedRowsForDelete);
+  }
+
+  onclickButton(){
+    for (let index = 0; index < this.selectedRows.length; index++) {
+      const recordId = this.selectedRows[index].Id;
+      deleteRecord(recordId)
+          .then(() => {
+            const index = this.allRecordsOfSelectedObject.findIndex(
+              (record) => record.Id === recordId
+            );
+            this.allRecordsOfSelectedObject.splice(index, 1);
+            const toastEvent = new ShowToastEvent({
+              title: "Success!",
+              message: "Record has been deleted.",
+              variant: "success"
+            });
+            this.dispatchEvent(toastEvent);
+            this.countEditDelete++;
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+    }
+  }
+
 }
